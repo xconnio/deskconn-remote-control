@@ -13,40 +13,40 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/xconnio/deskconn/appkit"
-	"github.com/xconnio/wampproto-go"
-	"github.com/xconnio/xconn-go"
+	"github.com/xconnio/xconn/bindings/go"
+	"github.com/xconnio/xconn/bindings/go/protocol"
 )
 
 // ProcedureKeyExchange is this app's own key exchange. Every other procedure here is
 // end-to-end encrypted with the keys it derives.
-const ProcedureKeyExchange = "io.xconn.remotecontrol.key.exchange"
+const ProcedureKeyExchange = "com.deskconn.remotecontrol.key.exchange"
 
 const (
-	ProcedureScreenBrightnessGet = "io.xconn.remotecontrol.screen.brightness.get"
-	ProcedureScreenBrightnessSet = "io.xconn.remotecontrol.screen.brightness.set"
-	ProcedureScreenLock          = "io.xconn.remotecontrol.screen.lock"
-	ProcedureScreenIsLocked      = "io.xconn.remotecontrol.screen.islocked"
+	ProcedureScreenBrightnessGet = "com.deskconn.remotecontrol.screen.brightness.get"
+	ProcedureScreenBrightnessSet = "com.deskconn.remotecontrol.screen.brightness.set"
+	ProcedureScreenLock          = "com.deskconn.remotecontrol.screen.lock"
+	ProcedureScreenIsLocked      = "com.deskconn.remotecontrol.screen.islocked"
 
-	ProcedureWallpaperGet      = "io.xconn.remotecontrol.wallpaper.get"
-	ProcedureWallpaperChecksum = "io.xconn.remotecontrol.wallpaper.checksum"
+	ProcedureWallpaperGet      = "com.deskconn.remotecontrol.wallpaper.get"
+	ProcedureWallpaperChecksum = "com.deskconn.remotecontrol.wallpaper.checksum"
 
-	ProcedureMPRISPlayers   = "io.xconn.remotecontrol.mpris.players"
-	ProcedureMPRISPlayPause = "io.xconn.remotecontrol.mpris.playpause"
-	ProcedureMPRISPlay      = "io.xconn.remotecontrol.mpris.play"
-	ProcedureMPRISPause     = "io.xconn.remotecontrol.mpris.pause"
-	ProcedureMPRISNext      = "io.xconn.remotecontrol.mpris.next"
-	ProcedureMPRISPrevious  = "io.xconn.remotecontrol.mpris.previous"
+	ProcedureMPRISPlayers   = "com.deskconn.remotecontrol.mpris.players"
+	ProcedureMPRISPlayPause = "com.deskconn.remotecontrol.mpris.playpause"
+	ProcedureMPRISPlay      = "com.deskconn.remotecontrol.mpris.play"
+	ProcedureMPRISPause     = "com.deskconn.remotecontrol.mpris.pause"
+	ProcedureMPRISNext      = "com.deskconn.remotecontrol.mpris.next"
+	ProcedureMPRISPrevious  = "com.deskconn.remotecontrol.mpris.previous"
 
-	ProcedureAudioMute       = "io.xconn.remotecontrol.audio.mute"
-	ProcedureAudioUnmute     = "io.xconn.remotecontrol.audio.unmute"
-	ProcedureAudioToggleMute = "io.xconn.remotecontrol.audio.togglemute"
-	ProcedureAudioIsMuted    = "io.xconn.remotecontrol.audio.ismuted"
+	ProcedureAudioMute       = "com.deskconn.remotecontrol.audio.mute"
+	ProcedureAudioUnmute     = "com.deskconn.remotecontrol.audio.unmute"
+	ProcedureAudioToggleMute = "com.deskconn.remotecontrol.audio.togglemute"
+	ProcedureAudioIsMuted    = "com.deskconn.remotecontrol.audio.ismuted"
 
-	ProcedureScreenshot           = "io.xconn.remotecontrol.screenshot"
-	ProcedureScreenshotPermission = "io.xconn.remotecontrol.screenshot.permission"
+	ProcedureScreenshot           = "com.deskconn.remotecontrol.screenshot"
+	ProcedureScreenshotPermission = "com.deskconn.remotecontrol.screenshot.permission"
 
-	ProcedurePrinterList  = "io.xconn.remotecontrol.printer.list"
-	ProcedurePrinterPrint = "io.xconn.remotecontrol.printer.print"
+	ProcedurePrinterList  = "com.deskconn.remotecontrol.printer.list"
+	ProcedurePrinterPrint = "com.deskconn.remotecontrol.printer.print"
 )
 
 // RemoteControl serves the machine's remote-control apps: screen brightness, lock and
@@ -147,24 +147,24 @@ func (r *RemoteControl) Register(session *xconn.Session) error {
 	if err := r.enc.Register(session, ProcedureKeyExchange); err != nil {
 		return err
 	}
-	if resp := session.Subscribe(appkit.TopicCapabilitiesChanged, r.handleCapabilitiesChanged).Do(); resp.Err != nil {
+	if resp := session.Subscribe(appkit.TopicCapabilitiesChanged, r.handleCapabilitiesChanged).Execute(); resp.Err != nil {
 		return resp.Err
 	}
 	payload, err := json.Marshal(r.apps())
 	if err != nil {
 		return err
 	}
-	if resp := session.Call(appkit.ProcedureAppsRegister).Args(payload).Do(); resp.Err != nil {
+	if resp := session.Call(appkit.ProcedureAppsRegister).Args(payload).Execute(); resp.Err != nil {
 		return resp.Err
 	}
-	resp := session.Call(appkit.ProcedureCapabilitiesList).Do()
+	resp := session.Call(appkit.ProcedureCapabilitiesList).Execute()
 	if resp.Err != nil {
 		return resp.Err
 	}
-	if len(resp.Args()) == 0 {
+	if len(resp.Args) == 0 {
 		return errors.New("deskconnd returned no apps list")
 	}
-	return r.subscribe(resp.Args()[0])
+	return r.subscribe(resp.Args[0])
 }
 
 func (r *RemoteControl) handleCapabilitiesChanged(event *xconn.Event) {
@@ -208,7 +208,7 @@ func (r *RemoteControl) subscribe(list any) error {
 			if _, ok := r.regs[uri]; ok {
 				continue
 			}
-			resp := r.session.Register(uri, r.enc.Encrypted(h)).Invoke(wampproto.InvokeLast).Do()
+			resp := r.session.Register(uri, r.enc.Encrypted(h)).Invoke(protocol.InvokeLast).Execute()
 			if resp.Err != nil {
 				return resp.Err
 			}
