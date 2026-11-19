@@ -13,7 +13,7 @@ import (
 
 	"github.com/xconnio/deskconn/appkit"
 	remotecontrol "github.com/xconnio/remotecontrol-app"
-	"github.com/xconnio/xconn-go"
+	"github.com/xconnio/xconn/bindings/go"
 )
 
 // reconnectDelay is how long to wait before dialing deskconnd's socket again after it

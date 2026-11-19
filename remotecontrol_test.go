@@ -12,7 +12,7 @@ import (
 
 	"github.com/xconnio/deskconn/appkit"
 	remotecontrol "github.com/xconnio/remotecontrol-app"
-	"github.com/xconnio/xconn-go"
+	"github.com/xconnio/xconn/bindings/go"
 )
 
 // setupRouterAndConnectSessions connects n sessions to a new router.
@@ -36,7 +36,7 @@ func setupRouterAndConnectSessions(t *testing.T, n int) []*xconn.Session {
 	require.NoError(t, err)
 	var apps []map[string]any
 	require.NoError(t, deskconnd.Register(appkit.ProcedureAppsRegister,
-		func(_ context.Context, inv *xconn.Invocation) *xconn.InvocationResult {
+		func(_ context.Context, inv *xconn.Invocation) *xconn.Result {
 			payload, err := inv.ArgBytes(0)
 			require.NoError(t, err)
 			require.NoError(t, json.Unmarshal(payload, &apps))
@@ -44,12 +44,12 @@ func setupRouterAndConnectSessions(t *testing.T, n int) []*xconn.Session {
 				require.Equal(t, remotecontrol.ProcedureKeyExchange, app["key_exchange"])
 				app["enabled"] = true
 			}
-			return xconn.NewInvocationResult()
-		}).Do().Err)
+			return xconn.NewResult()
+		}).Execute().Err)
 	require.NoError(t, deskconnd.Register(appkit.ProcedureCapabilitiesList,
-		func(_ context.Context, _ *xconn.Invocation) *xconn.InvocationResult {
-			return xconn.NewInvocationResult(apps)
-		}).Do().Err)
+		func(_ context.Context, _ *xconn.Invocation) *xconn.Result {
+			return xconn.NewResult(apps)
+		}).Execute().Err)
 	return sessions
 }
 
@@ -139,7 +139,7 @@ func TestRequiresKeyExchange(t *testing.T) {
 	r := remotecontrol.New(nil, nil, nil, false)
 	require.NoError(t, r.Register(callee))
 
-	resp := caller.Call(remotecontrol.ProcedurePrinterList).Do()
+	resp := caller.Call(remotecontrol.ProcedurePrinterList).Execute()
 	require.ErrorContains(t, resp.Err, "call key exchange first")
 
 	// Keys from another caller's exchange don't count.
@@ -157,7 +157,7 @@ func TestFollowsEnabledApps(t *testing.T) {
 
 	setPrinter := func(enabled bool) {
 		apps := []map[string]any{{"id": "printer", "enabled": enabled}}
-		require.NoError(t, deskconnd.Publish(appkit.TopicCapabilitiesChanged).Args(apps).Do().Err)
+		require.NoError(t, deskconnd.Publish(appkit.TopicCapabilitiesChanged).Args(apps).Execute().Err)
 	}
 	listPrinters := func() error {
 		_, err := call(t, caller, remotecontrol.ProcedurePrinterList, nil)
