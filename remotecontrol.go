@@ -82,7 +82,7 @@ func New(screen *Screen, mpris *MPRIS, audio *Audio, desktop bool) *RemoteContro
 	}
 }
 
-// app is one app as deskconnd's ProcedureAppsRegister takes it, with its procedures.
+// app is one app as deskconnd's ProcedureAppRegister takes it, with its procedures.
 type app struct {
 	ID          string                    `json:"id"`
 	Name        string                    `json:"name"`
@@ -154,7 +154,7 @@ func (r *RemoteControl) Register(session *xconn.Session) error {
 	if err != nil {
 		return err
 	}
-	if resp := session.Call(appkit.ProcedureAppsRegister).Args(payload).Execute(); resp.Err != nil {
+	if resp := session.Call(appkit.ProcedureAppRegister).Args(payload).Execute(); resp.Err != nil {
 		return resp.Err
 	}
 	resp := session.Call(appkit.ProcedureCapabilitiesList).Execute()

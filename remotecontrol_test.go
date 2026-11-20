@@ -35,7 +35,7 @@ func setupRouterAndConnectSessions(t *testing.T, n int) []*xconn.Session {
 	deskconnd, err := xconn.ConnectInMemory(r, "realm1")
 	require.NoError(t, err)
 	var apps []map[string]any
-	require.NoError(t, deskconnd.Register(appkit.ProcedureAppsRegister,
+	require.NoError(t, deskconnd.Register(appkit.ProcedureAppRegister,
 		func(_ context.Context, inv *xconn.Invocation) *xconn.Result {
 			payload, err := inv.ArgBytes(0)
 			require.NoError(t, err)
