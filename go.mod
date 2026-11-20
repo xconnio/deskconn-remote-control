@@ -8,7 +8,7 @@ require (
 	github.com/phin1x/go-ipp v1.7.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.12.1
-	github.com/xconnio/deskconn v0.1.0-beta.b2096d7
+	github.com/xconnio/deskconn v0.1.0-beta.fa6f4ce.0.20261120081005-5d2d5b2f5e44
 	github.com/xconnio/xconn/bindings/go v0.6.4
 	gopkg.in/yaml.v3 v3.0.1
 )
